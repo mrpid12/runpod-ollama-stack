@@ -36,8 +36,8 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 
 # Copy the working Open WebUI files from the builder stage
 COPY --from=webui-builder /app/ /app/
-# --- CORRECTED: Use pip3 to install dependencies ---
-RUN pip3 install -r /app/requirements.txt
+# --- CORRECTED: Use python -m pip to install dependencies ---
+RUN python -m pip install -r /app/requirements.txt
 
 # Clone and prepare SearxNG
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
