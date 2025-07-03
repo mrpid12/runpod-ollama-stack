@@ -1,31 +1,35 @@
 # Use an official NVIDIA CUDA image for GPU support
 FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 
-# Set environment variables
+# Set environment variables to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
 
-# Install dependencies: curl, supervisor, and other essentials
+# Install dependencies: curl, supervisor, git, wget, and pip
 RUN apt-get update && apt-get install -y \
     curl \
     supervisor \
     git \
     wget \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
 RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && chmod +x /usr/bin/ollama
 
-# Install Open WebUI using the current official installer script
-RUN curl -sSL https://raw.githubusercontent.com/open-webui/open-webui/main/install.sh | sh
+# Install 'uv', the recommended Python package manager from the Open WebUI docs
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Add uv to the system's PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Create necessary directories
+# Use uv to install Open WebUI
+RUN uv pip install open-webui
+
+# Create necessary directories for logs and data
 RUN mkdir -p /var/log/supervisor /root/.ollama /app/backend/data
 
-# Copy the supervisor config file
+# Copy your supervisor and model pull configurations
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Copy and make the model pull script executable
 COPY pull_model.sh /usr/local/bin/pull_model.sh
 RUN chmod +x /usr/local/bin/pull_model.sh
 
