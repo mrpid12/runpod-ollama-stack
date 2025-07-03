@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the repository URL and the local directory path
-GIT_REPO_URL="https://github.com/your-github-username/runpod-ollama-stack.git"
+GIT_REPO_URL="https://github.com/mrpid12/runpod-ollama-stack.git"
 CLONE_DIR="/workspace/runpod-ollama-stack"
 
 # Check if the repository directory already exists
