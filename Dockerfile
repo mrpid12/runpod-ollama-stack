@@ -18,9 +18,9 @@ RUN apt-get update && apt-get install -y \
 RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && chmod +x /usr/bin/ollama
 
 # Install Open WebUI using 'uv' in a single layer
-# This ensures the PATH is set correctly for the install command
+# This ensures the correct path is used for the install command
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    /root/.cargo/bin/uv pip install open-webui
+    /root/.local/bin/uv pip install open-webui
 
 # Create necessary directories for logs and data
 RUN mkdir -p /var/log/supervisor /root/.ollama /app/backend/data
