@@ -2,7 +2,7 @@
 FROM ghcr.io/open-webui/open-webui:main as webui-builder
 
 ### STAGE 2: Build Ollama from Source ###
-FROM golang:1.22 as ollama-builder
+FROM golang:1.24 as ollama-builder
 RUN git clone https://github.com/ollama/ollama.git /go/src/github.com/ollama/ollama
 WORKDIR /go/src/github.com/ollama/ollama
 RUN go generate ./...
