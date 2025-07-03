@@ -47,8 +47,8 @@ RUN python -m venv searx-pyenv && \
     pip install -r requirements.txt && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
-# Create necessary directories
-RUN mkdir -p /var/log/supervisor /app/backend/data
+# Create necessary directories, including the persistent logs directory
+RUN mkdir -p /var/log/supervisor /app/backend/data /workspace/logs
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
