@@ -2,15 +2,17 @@
 FROM node:20 as webui-builder
 WORKDIR /app
 RUN git clone https://github.com/open-webui/open-webui.git .
-RUN npm install
+# Clean npm cache after installing
+RUN npm install && npm cache clean --force
 RUN npm run build
 
 ### STAGE 2: Build Ollama from Source ###
 FROM golang:1.24 as ollama-builder
 RUN git clone https://github.com/ollama/ollama.git /go/src/github.com/ollama/ollama
 WORKDIR /go/src/github.com/ollama/ollama
+# Clean go cache after building
 RUN go generate ./...
-RUN CGO_ENABLED=1 go build .
+RUN CGO_ENABLED=1 go build . && go clean -modcache
 
 ### STAGE 3: Build the final image ###
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
@@ -22,7 +24,7 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install system dependencies
+# Install system dependencies and clean apt cache
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     supervisor \
@@ -40,22 +42,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the pre-built Ollama binary
 COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
 
-# --- CORRECTED: Copy only the necessary WebUI files ---
-# Copy the backend code and the compiled frontend assets, leaving node_modules behind
+# Copy the pre-built Open WebUI files
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
-
-# Install Open WebUI's backend dependencies
-RUN pip3 install -r /app/backend/requirements.txt -U
+# Install WebUI's Python dependencies and clean pip cache
+RUN pip3 install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
 
 # Clone and prepare SearxNG
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
-# Create venv and install packages for SearxNG
+# Create venv, install packages, and clean pip cache
 RUN python -m venv searx-pyenv && \
     . ./searx-pyenv/bin/activate && \
     pip install -r requirements.txt && \
+    rm -rf /root/.cache/pip && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
 # Create necessary directories
