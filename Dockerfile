@@ -1,17 +1,23 @@
 ### STAGE 1: Build the Open WebUI application ###
-# Use the official Open WebUI image as a builder base
 FROM ghcr.io/open-webui/open-webui:main as webui-builder
 
-### STAGE 2: Build the final image ###
-# Start from your future-proof NVIDIA CUDA base image
+### STAGE 2: Build Ollama from Source ###
+FROM golang:1.22 as ollama-builder
+RUN git clone https://github.com/ollama/ollama.git /go/src/github.com/ollama/ollama
+WORKDIR /go/src/github.com/ollama/ollama
+RUN go generate ./...
+RUN CGO_ENABLED=1 go build .
+
+### STAGE 3: Build the final image ###
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
 ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
+ENV OLLAMA_MODELS=/workspace/ollama-models
 
-# Install ALL necessary build-time and run-time dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     supervisor \
@@ -25,8 +31,8 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama
-RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && chmod +x /usr/bin/ollama
+# Copy the pre-built Ollama binary
+COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
 
 # Copy the working Open WebUI files from the builder stage
 COPY --from=webui-builder /app/ /app/
@@ -35,8 +41,7 @@ COPY --from=webui-builder /app/ /app/
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
-# THIS IS THE CORRECTED COMMAND BLOCK
-# It creates the venv, installs packages, and directly modifies the existing settings file.
+# Create venv and install packages
 RUN python -m venv searx-pyenv && \
     . ./searx-pyenv/bin/activate && \
     pip install -r requirements.txt && \
