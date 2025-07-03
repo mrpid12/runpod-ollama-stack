@@ -36,6 +36,8 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 
 # Copy the working Open WebUI files from the builder stage
 COPY --from=webui-builder /app/ /app/
+# --- NEW: Install Open WebUI's dependencies ---
+RUN pip install -r /app/requirements.txt
 
 # Clone and prepare SearxNG
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
@@ -47,8 +49,8 @@ RUN python -m venv searx-pyenv && \
     pip install -r requirements.txt && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
-# Create necessary directories, including the persistent logs directory
-RUN mkdir -p /var/log/supervisor /app/backend/data /workspace/logs
+# Create necessary directories
+RUN mkdir -p /var/log/supervisor /app/backend/data
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
