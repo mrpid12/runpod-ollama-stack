@@ -8,6 +8,8 @@ FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
 ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
+# --- NEW: Tell Ollama where to store models ---
+ENV OLLAMA_MODELS=/workspace/ollama-models
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -41,10 +43,9 @@ RUN python -m venv searx-pyenv && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
 # Create necessary directories
-RUN mkdir -p /var/log/supervisor /root/.ollama /app/backend/data
+RUN mkdir -p /var/log/supervisor /app/backend/data
 
-# --- NEW: Copy the entrypoint script ---
-# We no longer copy supervisord.conf or pull_model.sh here
+# Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
@@ -53,5 +54,5 @@ EXPOSE 8080
 EXPOSE 11434
 EXPOSE 8888
 
-# --- NEW: Set the entrypoint to our script ---
+# Set the entrypoint to our script
 ENTRYPOINT ["/entrypoint.sh"]
