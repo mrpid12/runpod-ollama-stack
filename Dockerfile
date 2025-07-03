@@ -1,25 +1,22 @@
-### STAGE 1: Build the Open WebUI application ###
-FROM ghcr.io/open-webui/open-webui:main as webui-builder
-
-### STAGE 2: Build Ollama from Source ###
+### STAGE 1: Build Ollama from Source ###
 FROM golang:1.24 as ollama-builder
 RUN git clone https://github.com/ollama/ollama.git /go/src/github.com/ollama/ollama
 WORKDIR /go/src/github.com/ollama/ollama
 RUN go generate ./...
 RUN CGO_ENABLED=1 go build .
 
-### STAGE 3: Build the final image ###
-FROM nvidia/cuda:12.4.1-base-ubuntu22.04
+### STAGE 2: Build the final image ###
+# START FROM THE OFFICIAL OPEN WEBUI IMAGE
+FROM ghcr.io/open-webui/open-webui:main
 
 # Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
-ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
+ENV PATH="/usr/local/searxng/searx-pyenv/bin:${PATH}"
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
+# Install dependencies needed for Ollama and SearxNG
+# The 'apt-get install -y --no-install-recommends' helps keep the image smaller
+RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
     git \
     sed \
@@ -31,30 +28,25 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the pre-built Ollama binary
+# Copy the pre-built Ollama binary from the builder stage
 COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
-
-# Copy the working Open WebUI files from the builder stage
-COPY --from=webui-builder /app/ /app/
-
-# Install Open WebUI's backend dependencies
-RUN python3 -m pip install -r /app/backend/requirements.txt
 
 # Clone and prepare SearxNG
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
-# Create venv and install packages
+# Create venv and install packages for SearxNG
 RUN python -m venv searx-pyenv && \
     . ./searx-pyenv/bin/activate && \
     pip install -r requirements.txt && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
 # Create necessary directories
-RUN mkdir -p /var/log/supervisor /app/backend/data
+RUN mkdir -p /var/log/supervisor /app/backend/data /workspace/logs
 
-# Copy the entrypoint script
+# Copy our custom scripts and configs
 COPY entrypoint.sh /entrypoint.sh
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod +x /entrypoint.sh
 
 # Expose the necessary ports
