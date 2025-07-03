@@ -36,7 +36,10 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 
 # Copy the working Open WebUI files from the builder stage
 COPY --from=webui-builder /app/ /app/
-# --- CORRECTED: Use python -m pip to install dependencies ---
+
+# --- DEFINITIVE FIX: Bootstrap pip directly ---
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN python get-pip.py
 RUN python -m pip install -r /app/requirements.txt
 
 # Clone and prepare SearxNG
