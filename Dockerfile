@@ -2,7 +2,6 @@
 FROM node:20 as webui-builder
 WORKDIR /app
 RUN git clone https://github.com/open-webui/open-webui.git .
-# Clean npm cache after installing
 RUN npm install && npm cache clean --force
 RUN npm run build
 
@@ -10,7 +9,6 @@ RUN npm run build
 FROM golang:1.24 as ollama-builder
 RUN git clone https://github.com/ollama/ollama.git /go/src/github.com/ollama/ollama
 WORKDIR /go/src/github.com/ollama/ollama
-# Clean go cache after building
 RUN go generate ./...
 RUN CGO_ENABLED=1 go build . && go clean -modcache
 
