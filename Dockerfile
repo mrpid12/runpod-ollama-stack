@@ -22,7 +22,7 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install system dependencies (nodejs and npm are no longer needed here)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     supervisor \
@@ -40,8 +40,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the pre-built Ollama binary
 COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
 
-# Copy the pre-built Open WebUI files from the webui-builder stage
-COPY --from=webui-builder /app /app
+# --- CORRECTED: Copy only the necessary WebUI files ---
+# Copy the backend code and the compiled frontend assets, leaving node_modules behind
+COPY --from=webui-builder /app/backend /app/backend
+COPY --from=webui-builder /app/build /app/build
+
 # Install Open WebUI's backend dependencies
 RUN pip3 install -r /app/backend/requirements.txt -U
 
