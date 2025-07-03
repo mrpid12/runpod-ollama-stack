@@ -22,7 +22,7 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install system dependencies and clean apt cache
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     supervisor \
@@ -43,7 +43,12 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 # Copy the pre-built Open WebUI files
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
-# Install WebUI's Python dependencies and clean pip cache
+
+# --- THIS IS THE FIX ---
+# Create a dummy .git directory to satisfy the startup check
+RUN mkdir -p /app/.git
+
+# Install WebUI's Python dependencies
 RUN pip3 install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
 
 # Clone and prepare SearxNG
