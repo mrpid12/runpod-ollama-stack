@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Install Open WebUI
-RUN pip3 install open-webui
+# Install Open WebUI using its official script
+RUN curl -sSL https://raw.githubusercontent.com/open-webui/open-webui/main/install.sh | sh
 
 # Create necessary directories
 RUN mkdir -p /var/log/supervisor /root/.ollama
