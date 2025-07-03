@@ -14,11 +14,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && chmod +x /usr/bin/ollama
 
-# Install Open WebUI using the correct backend download method
-RUN wget -qO- https://github.com/open-webui/open-webui/releases/latest/download/open-webui_linux_amd64.tar.gz | tar zx -C /
-RUN mv /open-webui_linux_amd64 /usr/local/bin/open-webui
+# Install Open WebUI using the current official installer script
+RUN curl -sSL https://raw.githubusercontent.com/open-webui/open-webui/main/install.sh | sh
 
 # Create necessary directories
 RUN mkdir -p /var/log/supervisor /root/.ollama /app/backend/data
