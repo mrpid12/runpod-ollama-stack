@@ -1,7 +1,6 @@
 ### STAGE 1: Build the Open WebUI application ###
 # Use the official Open WebUI image as a builder base
 FROM ghcr.io/open-webui/open-webui:main as webui-builder
-# We don't need to do anything here; this stage just holds the working files.
 
 ### STAGE 2: Build the final image ###
 # Start from your future-proof NVIDIA CUDA base image
@@ -11,12 +10,19 @@ FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
 
-# Install dependencies for Ollama, Supervisor, AND SearxNG
+# Install ALL dependencies for Ollama, Supervisor, AND SearxNG (from official docs)
 RUN apt-get update && apt-get install -y \
     curl \
     supervisor \
     git \
     sed \
+    python3-dev \
+    python3-venv \
+    python3-babel \
+    python-is-python3 \
+    build-essential \
+    libxslt-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
@@ -25,13 +31,13 @@ RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama &&
 # Copy the working Open WebUI files from the builder stage
 COPY --from=webui-builder /app/ /app/
 
-# Clone and prepare SearxNG
+# Clone and prepare SearxNG using the official commands
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
-# THIS IS THE CORRECTED COMMAND BLOCK, USING THE PATHS FROM YOUR LOG
+# THIS IS THE CORRECTED COMMAND BLOCK BASED ON THE OFFICIAL DOCS
 RUN sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml && \
-    ./utils/searxng.sh update_packages
+    ./utils/searxng.sh install packages
 
 # Create necessary directories
 RUN mkdir -p /var/log/supervisor /root/.ollama /app/backend/data
