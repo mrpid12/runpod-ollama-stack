@@ -28,7 +28,7 @@ COPY --from=webui-builder /app/ /app/
 # Clone and prepare SearxNG
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
-RUN sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searxng/settings.yml && \
+RUN sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" settings.yml && \
     ./utils/searxng.sh update_packages
 
 # Create necessary directories
