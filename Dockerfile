@@ -1,17 +1,17 @@
 ### STAGE 1: Build the Open WebUI application ###
+# Use the official Open WebUI image as a builder base
 FROM ghcr.io/open-webui/open-webui:main as webui-builder
 
 ### STAGE 2: Build the final image ###
+# Start from your future-proof NVIDIA CUDA base image
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
 ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
-# --- NEW: Tell Ollama where to store models ---
-ENV OLLAMA_MODELS=/workspace/ollama-models
 
-# Install dependencies
+# Install ALL necessary build-time and run-time dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     supervisor \
@@ -35,11 +35,11 @@ COPY --from=webui-builder /app/ /app/
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
-# Create venv, install packages, copy and modify settings
+# THIS IS THE CORRECTED COMMAND BLOCK
+# It creates the venv, installs packages, and directly modifies the existing settings file.
 RUN python -m venv searx-pyenv && \
     . ./searx-pyenv/bin/activate && \
     pip install -r requirements.txt && \
-    cp searx/settings.yml.example searx/settings.yml && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
 # Create necessary directories
