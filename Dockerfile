@@ -9,8 +9,9 @@ FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
+ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 
-# Install ALL dependencies for Ollama, Supervisor, AND SearxNG (from official docs)
+# Install ALL necessary build-time and run-time dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     supervisor \
@@ -18,7 +19,6 @@ RUN apt-get update && apt-get install -y \
     sed \
     python3-dev \
     python3-venv \
-    python3-babel \
     python-is-python3 \
     build-essential \
     libxslt-dev \
@@ -31,13 +31,16 @@ RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama &&
 # Copy the working Open WebUI files from the builder stage
 COPY --from=webui-builder /app/ /app/
 
-# Clone and prepare SearxNG using the official commands
+# Clone and prepare SearxNG
 RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
-# THIS IS THE CORRECTED COMMAND BLOCK BASED ON THE OFFICIAL DOCS
-RUN sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml && \
-    ./utils/searxng.sh install packages
+# THIS IS THE CORRECTED COMMAND BLOCK
+# It creates a virtual environment and installs Python packages into it directly.
+RUN python -m venv searx-pyenv && \
+    . ./searx-pyenv/bin/activate && \
+    pip install -r requirements.txt && \
+    sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
 # Create necessary directories
 RUN mkdir -p /var/log/supervisor /root/.ollama /app/backend/data
@@ -47,7 +50,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY pull_model.sh /usr/local/bin/pull_model.sh
 RUN chmod +x /usr/local/bin/pull_model.sh
 
-# Expose the necessary ports (add 8888 for SearxNG)
+# Expose the necessary ports
 EXPOSE 8080
 EXPOSE 11434
 EXPOSE 8888
