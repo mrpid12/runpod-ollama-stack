@@ -36,10 +36,11 @@ RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 
 # THIS IS THE CORRECTED COMMAND BLOCK
-# It creates a virtual environment and installs Python packages into it directly.
+# It creates the venv, copies the official template, then modifies it.
 RUN python -m venv searx-pyenv && \
     . ./searx-pyenv/bin/activate && \
     pip install -r requirements.txt && \
+    cp utils/templates/etc/searxng/settings.yml searx/settings.yml && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
 
 # Create necessary directories
