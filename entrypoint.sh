@@ -4,7 +4,7 @@
 GIT_REPO_URL="https://github.com/your-github-username/runpod-ollama-stack.git"
 CLONE_DIR="/workspace/runpod-ollama-stack"
 
-# --- NEW: Create the log directory to prevent supervisor errors ---
+# Create the log directory to prevent supervisor errors
 mkdir -p /workspace/logs
 
 # If the directory doesn't exist, clone it.
@@ -18,6 +18,10 @@ else
     git pull
 fi
 
-# Start the main supervisor process
+# --- NEW: Run the model pull script in the background ---
+echo "--- Starting model download in the background... ---"
+bash "$CLONE_DIR/pull_model.sh" &
+
+# Start the main supervisor process to manage long-running services
 echo "--- Starting services... ---"
 exec /usr/bin/supervisord -c "$CLONE_DIR/supervisord.conf"
