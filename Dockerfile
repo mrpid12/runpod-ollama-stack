@@ -13,10 +13,32 @@ WORKDIR /go/src/github.com/ollama/ollama
 RUN git clone --depth 1 https://github.com/ollama/ollama.git .
 RUN go generate ./...
 # FIX: Add '-tags cuda' for GPU support
-RUN CGO_ENABLED=1 go build -tags cuda . && go clean -modcache
+RUN CGO_ENABLED=1 go build -tags cuda . \
+    && go clean -modcache
 
 ### STAGE 3: Build the final image ###
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
+
+# --- START OF FIX ---
+
+# Set environment variables to enable NVIDIA GPU access
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+# Install the NVIDIA Container Toolkit runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg \
+    && curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+    && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list \
+    && apt-get update
+
+RUN apt-get install -y --no-install-recommends \
+    nvidia-container-toolkit \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- END OF FIX ---
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
