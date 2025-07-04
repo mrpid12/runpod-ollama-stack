@@ -24,7 +24,6 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# --- PYTHON 3.11 FIX ---
 # Install Python 3.11, which is required by OpenWebUI
 RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
@@ -48,7 +47,6 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 
 # Upgrade pip for the new Python version
 RUN python3 -m pip install --upgrade pip
-# --- END FIX ---
 
 # Copy the pre-built Ollama binary
 COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
@@ -57,8 +55,9 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
-# Install WebUI's Python dependencies using the new Python 3.11
-RUN python3 -m pip install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
+# --- THIS IS THE FIX ---
+# Install WebUI's Python dependencies, ignoring packages already installed by the OS.
+RUN python3 -m pip install --ignore-installed -r /app/backend/requirements.txt && rm -rf /root/.cache/pip
 
 # Initialize a valid, empty git repository in the backend directory.
 RUN git init /app/backend
