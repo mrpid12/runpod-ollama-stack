@@ -24,20 +24,31 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install system dependencies
+# --- PYTHON 3.11 FIX ---
+# Install Python 3.11, which is required by OpenWebUI
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
     curl \
     supervisor \
     git \
     sed \
-    python3-dev \
-    python3-venv \
+    python3.11 \
+    python3.11-dev \
+    python3.11-venv \
     python3-pip \
-    python-is-python3 \
     build-essential \
     libxslt-dev \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Set python3.11 as the default python3
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+# Upgrade pip for the new Python version
+RUN python3 -m pip install --upgrade pip
+# --- END FIX ---
 
 # Copy the pre-built Ollama binary
 COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
@@ -46,22 +57,19 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
-# Install WebUI's Python dependencies
-RUN pip3 install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
+# Install WebUI's Python dependencies using the new Python 3.11
+RUN python3 -m pip install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
 
-# --- DEFINITIVE FIX ---
 # Initialize a valid, empty git repository in the backend directory.
-# This satisfies the application's requirement for a valid repo structure.
 RUN git init /app/backend
-# --- END FIX ---
 
 # Clone and prepare SearxNG
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     rm -rf /usr/local/searxng/.git
 WORKDIR /usr/local/searxng
 
-# Create venv and install packages by calling the venv's pip directly.
-RUN python -m venv searx-pyenv && \
+# Create venv and install packages using the new Python 3.11
+RUN python3 -m venv searx-pyenv && \
     ./searx-pyenv/bin/pip install -r requirements.txt && \
     rm -rf /root/.cache/pip && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
