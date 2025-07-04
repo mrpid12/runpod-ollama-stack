@@ -1,8 +1,9 @@
 #!/bin/bash
 sleep 15 # Wait for the Ollama server to be ready
 
-# Changed to a smaller, more responsive model suitable for most hardware.
-MODEL_TO_PULL="llama3:8b-instruct"
+# This will download the high-performance Llama 3.1 70B model.
+# The q4_k_m tag is optimized for a 48GB VRAM card.
+MODEL_TO_PULL="mlabonne/llama-3.1-70b-instruct-lorablated-gguf:q4_k_m"
 
 if ! ollama list | grep -q "$MODEL_TO_PULL"; then
   echo "--- Pulling default model: $MODEL_TO_PULL ---"
