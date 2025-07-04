@@ -5,15 +5,7 @@ RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
 RUN npm run build
 
-### STAGE 2: Build Ollama from Source with GPU Support ###
-FROM golang:1.24 as ollama-builder
-WORKDIR /go/src/github.com/ollama/ollama
-RUN git clone --depth 1 https://github.com/ollama/ollama.git .
-RUN go generate ./...
-# Build Ollama with NVIDIA CUDA support
-RUN CGO_ENABLED=1 go build -tags cuda . && go clean -modcache
-
-### STAGE 3: Build Python Dependencies ###
+### STAGE 2: Build Python Dependencies ###
 FROM python:3.11-slim as python-builder
 ENV PIP_ROOT_USER_ACTION=ignore
 # Install build tools needed for Python packages
@@ -21,14 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends git build-essen
 # Copy WebUI requirements and install them
 COPY --from=webui-builder /app/backend/requirements.txt /tmp/webui_requirements.txt
 RUN pip install --no-cache-dir --ignore-installed -r /tmp/webui_requirements.txt
-# Clone SearxNG, build its venv, and then remove the unneeded repo source
+# Clone SearxNG and build its venv, then remove the unneeded repo source
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 RUN python3 -m venv searx-pyenv && \
     ./searx-pyenv/bin/pip install --no-cache-dir -r requirements.txt && \
     rm -rf /usr/local/searxng/.git
 
-### STAGE 4: The Final, Lean Image ###
+### STAGE 3: The Final, Lean Image ###
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
 # Set environment variables
@@ -47,8 +39,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends software-proper
 # Set python3.11 as the default python3
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 
-# Copy pre-built binaries and assets
-COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/ollama
+# --- THIS IS THE FIX ---
+# Copy the pre-built, GPU-enabled Ollama binary from the official image
+# This avoids building it from source, saving a huge amount of disk space.
+COPY --from=ollama/ollama:latest /bin/ollama /usr/bin/ollama
+
+# Copy other pre-built assets
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 COPY --from=webui-builder /app/CHANGELOG.md /app/backend/open_webui/CHANGELOG.md
