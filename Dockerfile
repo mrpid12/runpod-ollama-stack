@@ -46,34 +46,27 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
-# --- REORDERED FIX ---
-
 # STEP 1: Install WebUI's Python dependencies FIRST.
-# This isolates the installation and prevents it from potentially removing our fix.
 RUN pip3 install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
 
 # STEP 2: Create the dummy .git directory AFTER dependencies are installed.
-# This ensures it's one of the last modifications to the /app/backend directory.
 RUN mkdir -p /app/backend/.git
 
 # STEP 3: Add a diagnostic command to verify the fix.
-# This will print the file structure in your build log, removing any guesswork.
 RUN echo "--- Verifying /app directory contents ---" && ls -laR /app
 
-# --- END REORDERED FIX ---
-
 # Clone and prepare SearxNG
-# Use a shallow clone and remove the .git folder after install to save space
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     rm -rf /usr/local/searxng/.git
 WORKDIR /usr/local/searxng
 
-# Create venv, install packages, and clean pip cache
+# --- CORRECTED SEARXNG SETUP ---
+# Create venv and install packages by calling the venv's pip directly.
 RUN python -m venv searx-pyenv && \
-    ./searx-pyenv/bin/activate && \
-    pip install -r requirements.txt && \
+    ./searx-pyenv/bin/pip install -r requirements.txt && \
     rm -rf /root/.cache/pip && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
+# --- END CORRECTION ---
 
 # Create necessary directories
 RUN mkdir -p /var/log/supervisor /app/backend/data /workspace/logs
