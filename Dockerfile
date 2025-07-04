@@ -41,8 +41,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /
 RUN git clone --depth 1 https://github.com/ollama/ollama.git /ollama-src
 WORKDIR /ollama-src
+# --- THIS IS THE FIX ---
+# Use the full path for all 'go' commands in the chain
 RUN CGO_ENABLED=1 /usr/lib/go-1.24/bin/go build -tags cuda -o /usr/bin/ollama . \
-    && go clean -modcache \
+    && /usr/lib/go-1.24/bin/go clean -modcache \
     && rm -rf /ollama-src
 
 # Set python3.11 as the default
