@@ -1,14 +1,16 @@
 ### STAGE 1: Build the Open WebUI application ###
 FROM node:20 as webui-builder
 WORKDIR /app
-RUN git clone https://github.com/open-webui/open-webui.git .
+# Use a shallow clone for a faster, smaller build stage
+RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
 RUN npm run build
 
 ### STAGE 2: Build Ollama from Source ###
 FROM golang:1.24 as ollama-builder
-RUN git clone https://github.com/ollama/ollama.git /go/src/github.com/ollama/ollama
 WORKDIR /go/src/github.com/ollama/ollama
+# Use a shallow clone for a faster, smaller build stage
+RUN git clone --depth 1 https://github.com/ollama/ollama.git .
 RUN go generate ./...
 RUN CGO_ENABLED=1 go build . && go clean -modcache
 
@@ -44,21 +46,31 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
-# --- THIS IS THE FIX ---
-# Create a dummy .git directory inside the backend to satisfy the startup check
-RUN mkdir -p /app/backend/.git
+# --- REORDERED FIX ---
 
-# Install WebUI's Python dependencies
-# Note: The requirements file is in /app/backend, not /app
+# STEP 1: Install WebUI's Python dependencies FIRST.
+# This isolates the installation and prevents it from potentially removing our fix.
 RUN pip3 install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
 
+# STEP 2: Create the dummy .git directory AFTER dependencies are installed.
+# This ensures it's one of the last modifications to the /app/backend directory.
+RUN mkdir -p /app/backend/.git
+
+# STEP 3: Add a diagnostic command to verify the fix.
+# This will print the file structure in your build log, removing any guesswork.
+RUN echo "--- Verifying /app directory contents ---" && ls -laR /app
+
+# --- END REORDERED FIX ---
+
 # Clone and prepare SearxNG
-RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng
+# Use a shallow clone and remove the .git folder after install to save space
+RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
+    rm -rf /usr/local/searxng/.git
 WORKDIR /usr/local/searxng
 
 # Create venv, install packages, and clean pip cache
 RUN python -m venv searx-pyenv && \
-    . ./searx-pyenv/bin/activate && \
+    ./searx-pyenv/bin/activate && \
     pip install -r requirements.txt && \
     rm -rf /root/.cache/pip && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
@@ -69,7 +81,8 @@ RUN mkdir -p /var/log/supervisor /app/backend/data /workspace/logs
 # Copy our custom scripts and configs
 COPY entrypoint.sh /entrypoint.sh
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chmod +x /entrypoint.sh
+COPY pull_model.sh /pull_model.sh
+RUN chmod +x /entrypoint.sh /pull_model.sh
 
 # Expose the necessary ports
 EXPOSE 8080
