@@ -12,7 +12,7 @@ WORKDIR /go/src/github.com/ollama/ollama
 # Use a shallow clone for a faster, smaller build stage
 RUN git clone --depth 1 https://github.com/ollama/ollama.git .
 RUN go generate ./...
-# FIX: Add '-tags cuda' for GPU support
+# Build with CUDA support
 RUN CGO_ENABLED=1 go build -tags cuda . \
     && go clean -modcache
 
@@ -21,38 +21,33 @@ FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
 # --- START OF FIX ---
 
-# Set environment variables to enable NVIDIA GPU access
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-
-# Install the NVIDIA Container Toolkit runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gnupg \
-    && curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-    && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list \
-    && apt-get update
-
-RUN apt-get install -y --no-install-recommends \
-    nvidia-container-toolkit \
-    && rm -rf /var/lib/apt/lists/*
-
-# --- END OF FIX ---
-
-# Set environment variables
+# Set environment variables to enable NVIDIA GPU access and other settings
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OLLAMA_HOST=0.0.0.0
 ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install Python 3.11, which is required by OpenWebUI
+# Install curl and gnupg first, then add the NVIDIA repository and GPG key
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    && curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+    && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+# --- END OF FIX ---
+
+# Install the NVIDIA toolkit and other required system packages
+# The PPA is for installing Python 3.11
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nvidia-container-toolkit \
     software-properties-common \
     && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update && apt-get install -y --no-install-recommends \
-    curl \
     supervisor \
     git \
     sed \
@@ -78,13 +73,13 @@ COPY --from=ollama-builder /go/src/github.com/ollama/ollama/ollama /usr/bin/olla
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
-# Copy the changelog file required by the backend on startup.
+# Copy the changelog file required by the backend on startup
 COPY --from=webui-builder /app/CHANGELOG.md /app/backend/open_webui/CHANGELOG.md
 
-# Install WebUI's Python dependencies, ignoring packages already installed by the OS.
+# Install WebUI's Python dependencies, ignoring packages already installed by the OS
 RUN python3 -m pip install --ignore-installed -r /app/backend/requirements.txt && rm -rf /root/.cache/pip
 
-# Initialize a valid, empty git repository in the backend directory.
+# Initialize a valid, empty git repository in the backend directory
 RUN git init /app/backend
 
 # Clone and prepare SearxNG
@@ -97,7 +92,6 @@ RUN python3 -m venv searx-pyenv && \
     ./searx-pyenv/bin/pip install -r requirements.txt && \
     rm -rf /root/.cache/pip && \
     sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml && \
-    # FIX: Add sed command to change port to 8888
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml
 
 # Create necessary directories
