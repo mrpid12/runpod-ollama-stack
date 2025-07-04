@@ -56,6 +56,9 @@ COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
 # --- THIS IS THE FIX ---
+# Copy the changelog file required by the backend on startup.
+COPY --from=webui-builder /app/CHANGELOG.md /app/backend/open_webui/CHANGELOG.md
+
 # Install WebUI's Python dependencies, ignoring packages already installed by the OS.
 RUN python3 -m pip install --ignore-installed -r /app/backend/requirements.txt && rm -rf /root/.cache/pip
 
