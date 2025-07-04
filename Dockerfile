@@ -21,11 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends git build-essen
 # Copy WebUI requirements and install them
 COPY --from=webui-builder /app/backend/requirements.txt /tmp/webui_requirements.txt
 RUN pip install --no-cache-dir --ignore-installed -r /tmp/webui_requirements.txt
-# Clone SearxNG and build its virtual environment
+# Clone SearxNG, build its venv, and then remove the unneeded repo source
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng
 WORKDIR /usr/local/searxng
 RUN python3 -m venv searx-pyenv && \
-    ./searx-pyenv/bin/pip install --no-cache-dir -r requirements.txt
+    ./searx-pyenv/bin/pip install --no-cache-dir -r requirements.txt && \
+    rm -rf /usr/local/searxng/.git
 
 ### STAGE 4: The Final, Lean Image ###
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
