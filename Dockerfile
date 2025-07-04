@@ -45,10 +45,11 @@ COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
 # --- THIS IS THE FIX ---
-# Create a dummy .git directory to satisfy the startup check
-RUN mkdir -p /app/.git
+# Create a dummy .git directory inside the backend to satisfy the startup check
+RUN mkdir -p /app/backend/.git
 
 # Install WebUI's Python dependencies
+# Note: The requirements file is in /app/backend, not /app
 RUN pip3 install -r /app/backend/requirements.txt -U && rm -rf /root/.cache/pip
 
 # Clone and prepare SearxNG
