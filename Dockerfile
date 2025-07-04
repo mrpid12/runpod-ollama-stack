@@ -5,12 +5,13 @@ RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
 RUN npm run build
 
-### STAGE 2: Build Ollama from Source ###
+### STAGE 2: Build Ollama from Source with GPU Support ###
 FROM golang:1.24 as ollama-builder
 WORKDIR /go/src/github.com/ollama/ollama
 RUN git clone --depth 1 https://github.com/ollama/ollama.git .
 RUN go generate ./...
-RUN CGO_ENABLED=1 go build . && go clean -modcache
+# Build Ollama with NVIDIA CUDA support
+RUN CGO_ENABLED=1 go build -tags cuda . && go clean -modcache
 
 ### STAGE 3: Build Python Dependencies ###
 FROM python:3.11-slim as python-builder
@@ -36,17 +37,12 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 
 # Install only the RUNTIME dependencies.
-RUN apt-get update && add-apt-repository -y ppa:deadsnakes/ppa && apt-get install -y --no-install-recommends \
-    curl \
-    supervisor \
-    git \
-    sed \
-    python3.11 \
-    python3.11-venv \
-    # Add nano and wget as requested
-    nano \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl supervisor git sed python3.11 python3.11-venv nano wget && \
+    rm -rf /var/lib/apt/lists/*
 # Set python3.11 as the default python3
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 
@@ -66,7 +62,6 @@ RUN git init /app/backend
 # Configure SearxNG's settings file now that it's copied over
 WORKDIR /usr/local/searxng
 RUN sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml && \
-    # Fix port conflict by changing SearxNG port to 8888
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml
 
 # Create necessary directories
