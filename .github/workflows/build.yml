@@ -28,3 +28,5 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+          # Force a clean build without using any cached layers.
+          no-cache: true
