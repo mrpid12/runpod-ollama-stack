@@ -13,8 +13,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # --- THIS IS THE FIX ---
-      # This step removes pre-installed software from the runner to free up disk space.
       - name: Free Up Disk Space
         run: |
           echo "Initial free space:"
@@ -35,13 +33,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # --- THIS IS THE FIX ---
+      # Cache settings are enabled to speed up subsequent builds.
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
-          # We remove the no-cache flag to speed up future builds,
-          # but it's important to keep it in mind if you have caching issues.
-          # cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
-          # cache-to: type=inline
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
+          cache-to: type=inline
