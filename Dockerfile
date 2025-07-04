@@ -56,9 +56,9 @@ COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 COPY --from=webui-builder /app/CHANGELOG.md /app/backend/open_webui/CHANGELOG.md
 
-# Install WebUI's Python dependencies and clean up in the same layer
-RUN python3 -m pip install --ignore-installed -r /app/backend/requirements.txt \
-    && rm -rf /root/.cache/pip
+# --- THIS IS THE FIX ---
+# Install WebUI's Python dependencies without using the cache to save space
+RUN python3 -m pip install --no-cache-dir --ignore-installed -r /app/backend/requirements.txt
 
 # Initialize a git repository for WebUI
 RUN git init /app/backend
