@@ -17,9 +17,8 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install all system dependencies, including Go and Python, and clean up in the same layer
+# Install all system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common \
     python3.11 \
     python3.11-dev \
     python3.11-venv \
@@ -31,21 +30,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
     git \
     sed \
-    && add-apt-repository -y ppa:longsleep/golang-backports \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends golang-1.24 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Build Ollama from source and clean up in the same layer
-WORKDIR /
-RUN git clone --depth 1 https://github.com/ollama/ollama.git /ollama-src
-WORKDIR /ollama-src
 # --- THIS IS THE FIX ---
-# Explicitly set CUDA_HOME and LD_LIBRARY_PATH to ensure the Go builder finds the NVIDIA libraries.
-RUN CUDA_HOME=/usr/local/cuda CGO_ENABLED=1 LD_LIBRARY_PATH=/usr/local/cuda/lib64 /usr/lib/go-1.24/bin/go build -tags cuda -o /usr/bin/ollama . \
-    && /usr/lib/go-1.24/bin/go clean -modcache \
-    && rm -rf /ollama-src
+# Download and install the official pre-compiled Ollama binary instead of building from source.
+RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && \
+    chmod +x /usr/bin/ollama
 
 # Set python3.11 as the default
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
