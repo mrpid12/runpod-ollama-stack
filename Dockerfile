@@ -54,9 +54,8 @@ COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 COPY --from=webui-builder /app/CHANGELOG.md /app/backend/open_webui/CHANGELOG.md
 
-# --- TEMPORARILY COMMENTED OUT FOR PARTIAL BUILD ---
 # Install WebUI's Python dependencies without using the cache to save space
-# RUN python3 -m pip install --no-cache-dir --ignore-installed -r /app/backend/requirements.txt
+RUN python3 -m pip install --no-cache-dir --ignore-installed -r /app/backend/requirements.txt
 
 # Initialize a git repository for WebUI
 RUN git init /app/backend
