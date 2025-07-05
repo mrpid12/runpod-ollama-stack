@@ -51,6 +51,6 @@ echo "--- Model check initiated. Pull will continue in the background. ---"
 mkdir -p /workspace/logs
 
 # Start the main supervisor process with our custom config file.
-# This assumes your repository is mounted at /workspace
+# The config file is now located in /runpod_config/
 echo "--- Starting all services using custom supervisor config... ---"
-exec /usr/bin/supervisord -c /workspace/supervisord.conf
+exec /usr/bin/supervisord -c /runpod_config/supervisord.conf
