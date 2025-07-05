@@ -26,7 +26,10 @@ if [ ! -d "/workspace/searxng" ]; then
     cd /workspace/searxng
     python3 -m venv searx-pyenv
     ./searx-pyenv/bin/pip install -r requirements.txt
-    sed -i "s/ultrasecretkey/\$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/g" searx/settings.yml
+    
+    # --- THIS IS THE FIX ---
+    # Use a different delimiter (#) for the sed command to avoid errors with special characters.
+    sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml
 else
     echo "--- SearXNG already found in /workspace/searxng. Skipping installation. ---"
