@@ -41,8 +41,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /
 RUN git clone --depth 1 https://github.com/ollama/ollama.git /ollama-src
 WORKDIR /ollama-src
-
-# --- THIS IS THE FIX ---
 # Set the library path during the build to ensure the binary is linked against the CUDA libraries.
 RUN CGO_ENABLED=1 LD_LIBRARY_PATH=/usr/local/cuda/lib64 /usr/lib/go-1.24/bin/go build -tags cuda -o /usr/bin/ollama . \
     && /usr/lib/go-1.24/bin/go clean -modcache \
@@ -57,8 +55,9 @@ COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 COPY --from=webui-builder /app/CHANGELOG.md /app/backend/open_webui/CHANGELOG.md
 
+# --- TEMPORARILY COMMENTED OUT FOR PARTIAL BUILD ---
 # Install WebUI's Python dependencies without using the cache to save space
-RUN python3 -m pip install --no-cache-dir --ignore-installed -r /app/backend/requirements.txt
+# RUN python3 -m pip install --no-cache-dir --ignore-installed -r /app/backend/requirements.txt
 
 # Initialize a git repository for WebUI
 RUN git init /app/backend
