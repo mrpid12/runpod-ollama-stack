@@ -4,12 +4,11 @@ FROM madiator2011/better-ollama-webui:cuda12.4
 # Switch to the root user to install packages
 USER root
 
-# Install system dependencies needed for SearXNG and supervisor
+# Install system dependencies needed for SearXNG and our own supervisor
+# The base image may have some of these, but we install them to be safe.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 \
-    python3.11-venv \
-    build-essential \
     git \
+    python3.11-venv \
     supervisor \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -24,16 +23,17 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git searxng && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml
 
 # Create necessary directories for logs
-RUN mkdir -p /var/log/supervisor /workspace/logs
+RUN mkdir -p /workspace/logs
 
 # Copy your custom scripts and the new supervisor config
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# We name our config file uniquely to avoid conflicts with the base image's config.
+COPY supervisord.conf /etc/supervisor/conf.d/our-services.conf
 COPY pull_model.sh /pull_model.sh
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh /pull_model.sh
+COPY entrypoint.sh /custom_entrypoint.sh
+RUN chmod +x /custom_entrypoint.sh /pull_model.sh
 
 # Expose the SearXNG port
 EXPOSE 8888
 
 # Set the entrypoint to our new script
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/custom_entrypoint.sh"]
