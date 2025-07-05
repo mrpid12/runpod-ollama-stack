@@ -29,6 +29,23 @@ else
     echo "--- SearXNG already installed. Skipping installation. ---"
 fi
 
+# --- Ollama Model Pull ---
+# This logic is now part of the main entrypoint.
+# Wait for the Ollama server to be ready before trying to pull the model.
+echo "--- Waiting for Ollama server to be ready... ---"
+sleep 15 
+
+MODEL_TO_PULL="mlabonne/llama-3.1-70b-instruct-lorablated-gguf:q4_k_m"
+
+if ! ollama list | grep -q "$MODEL_TO_PULL"; then
+  echo "--- Pulling default model: $MODEL_TO_PULL ---"
+  ollama pull "$MODEL_TO_PULL" &
+else
+  echo "--- Default model $MODEL_TO_PULL already exists ---"
+fi
+echo "--- Model check initiated. Pull will continue in the background. ---"
+
+
 # --- Start Services ---
 # Create the log directory to prevent supervisor errors
 mkdir -p /workspace/logs
