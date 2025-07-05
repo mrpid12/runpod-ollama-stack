@@ -17,7 +17,8 @@ ENV PATH="/usr/local/searxng/searx-pyenv/bin:$PATH"
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install all system dependencies
+# --- THIS IS THE FIX ---
+# Install all system dependencies, including libgomp1 which is required by the pre-compiled Ollama binary.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
     python3.11-dev \
@@ -30,11 +31,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
     git \
     sed \
+    libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- THIS IS THE FIX ---
-# Download and install the official pre-compiled Ollama binary instead of building from source.
+# Download and install the official pre-compiled Ollama binary.
 RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && \
     chmod +x /usr/bin/ollama
 
