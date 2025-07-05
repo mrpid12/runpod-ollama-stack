@@ -41,7 +41,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /
 RUN git clone --depth 1 https://github.com/ollama/ollama.git /ollama-src
 WORKDIR /ollama-src
-RUN CGO_ENABLED=1 /usr/lib/go-1.24/bin/go build -tags cuda -o /usr/bin/ollama . \
+
+# --- THIS IS THE FIX ---
+# Set the library path during the build to ensure the binary is linked against the CUDA libraries.
+RUN CGO_ENABLED=1 LD_LIBRARY_PATH=/usr/local/cuda/lib64 /usr/lib/go-1.24/bin/go build -tags cuda -o /usr/bin/ollama . \
     && /usr/lib/go-1.24/bin/go clean -modcache \
     && rm -rf /ollama-src
 
