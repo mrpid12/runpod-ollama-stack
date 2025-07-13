@@ -21,7 +21,6 @@ ENV OLLAMA_HOST=0.0.0.0
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# --- THIS IS THE FIX ---
 # Install all system dependencies, including the generic python3-venv package,
 # and then explicitly set python3.11 as the default.
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -36,8 +35,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# --- THIS IS THE FIX ---
+# Use curl with the -f (fail) and -L (location) flags to ensure the download is robust.
 # Download and install the official pre-compiled Ollama binary for reliability.
-RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && \
+RUN curl -fL https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && \
     chmod +x /usr/bin/ollama
 
 # Copy the pre-built Open WebUI backend and frontend from the builder stage.
