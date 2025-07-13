@@ -41,9 +41,10 @@ COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
 # --- THIS IS THE FIX ---
-# Use the canonical 'python3 -m pip' command to avoid PATH issues.
-# Install Open WebUI's Python dependencies.
-RUN python3 -m pip install -r /app/backend/requirements.txt -U && \
+# Ensure pip is installed and then use the canonical 'python3 -m pip' command.
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3 get-pip.py && \
+    python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
 # Clone and set up SearXNG.
