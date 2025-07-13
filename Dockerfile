@@ -21,14 +21,18 @@ ENV OLLAMA_HOST=0.0.0.0
 ENV OLLAMA_MODELS=/workspace/ollama-models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install all system dependencies in a single layer to save space and clean up caches.
+# --- THIS IS THE FIX ---
+# Install all system dependencies, including the generic python3-venv package,
+# and then explicitly set python3.11 as the default.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     supervisor \
     python3.11 \
     python3.11-venv \
+    python3-venv \
     libgomp1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -40,8 +44,7 @@ RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama &&
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
-# --- THIS IS THE FIX ---
-# Ensure pip is installed and then use the canonical 'python3 -m pip' command.
+# Ensure pip is available and then install Open WebUI's Python dependencies.
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
