@@ -5,9 +5,7 @@ WORKDIR /app
 # Clone the repository and install dependencies
 RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
-# --- THIS IS THE FIX ---
-# Increase the memory available to the Node.js build process to a safe value for an 8GB machine.
-# Build the production-ready frontend
+# Increase the memory available to the Node.js build process.
 RUN NODE_OPTIONS="--max-old-space-size=6144" npm run build
 
 
@@ -42,8 +40,10 @@ RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama &&
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 
+# --- THIS IS THE FIX ---
+# Use the canonical 'python3 -m pip' command to avoid PATH issues.
 # Install Open WebUI's Python dependencies.
-RUN pip install -r /app/backend/requirements.txt -U && \
+RUN python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
 # Clone and set up SearXNG.
