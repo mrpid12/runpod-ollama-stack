@@ -6,9 +6,9 @@ WORKDIR /app
 RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
 # --- THIS IS THE FIX ---
-# Increase the memory available to the Node.js build process.
+# Increase the memory available to the Node.js build process to a safe value for an 8GB machine.
 # Build the production-ready frontend
-RUN NODE_OPTIONS="--max-old-space-size=8192" npm run build
+RUN NODE_OPTIONS="--max-old-space-size=6144" npm run build
 
 
 # --- STAGE 2: Final Production Image ---
