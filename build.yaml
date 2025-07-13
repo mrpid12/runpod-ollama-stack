@@ -8,8 +8,8 @@ on:
 
 jobs:
   build:
-    # This tells the job to run on your self-hosted machine
-    runs-on: self-hosted
+    # This now specifically targets a runner with all three labels
+    runs-on: [self-hosted, Linux, X64]
 
     steps:
       - name: Checkout Repository
@@ -30,8 +30,6 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
-          # This is the caching strategy you suggested.
-          # It uses the image tag in the registry as a source for the cache.
+          # Caching strategy to speed up future builds
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
-          # This tells the build to save the cache back to the registry.
           cache-to: type=inline
