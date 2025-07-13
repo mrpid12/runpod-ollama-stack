@@ -35,13 +35,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# --- THIS IS THE FIX ---
 # Download and install Ollama using the official installation script for reliability.
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Copy the pre-built Open WebUI backend and frontend from the builder stage.
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
+# --- THIS IS THE FIX ---
+# Copy the CHANGELOG.md file required by the backend to start.
+COPY --from=webui-builder /app/CHANGELOG.md /app/CHANGELOG.md
 
 # Ensure pip is available and then install Open WebUI's Python dependencies.
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
