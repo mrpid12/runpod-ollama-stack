@@ -36,10 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # --- THIS IS THE FIX ---
-# Use curl with the -f (fail) and -L (location) flags to ensure the download is robust.
-# Download and install the official pre-compiled Ollama binary for reliability.
-RUN curl -fL https://ollama.com/download/ollama-linux-amd64 -o /usr/bin/ollama && \
-    chmod +x /usr/bin/ollama
+# Download and install Ollama using the official installation script for reliability.
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Copy the pre-built Open WebUI backend and frontend from the builder stage.
 COPY --from=webui-builder /app/backend /app/backend
