@@ -17,9 +17,10 @@ FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-# --- THIS IS A FIX ---
-# Point Ollama to the root of the workspace to match your existing model structure.
-ENV OLLAMA_MODELS=/workspace
+# --- NEW FIX ---
+# Point Ollama to a dedicated, unambiguous path inside the container.
+# This avoids potential issues where Ollama tries to guess subdirectories.
+ENV OLLAMA_MODELS=/ollama_home
 ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install all system dependencies, including the generic python3-venv package,
@@ -62,6 +63,14 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxn
 
 # Create necessary directories for logs and data.
 RUN mkdir -p /workspace/logs /app/backend/data
+
+# --- NEW FIX ---
+# Create the dedicated home for Ollama and create symbolic links
+# from it to your actual model data on the network volume (/workspace).
+# This ensures Ollama finds the manifests and models directories exactly where it expects them.
+RUN mkdir -p /ollama_home && \
+    ln -s /workspace/manifests /ollama_home/manifests && \
+    ln -s /workspace/models /ollama_home/models
 
 # Copy your custom scripts and supervisor config.
 COPY supervisord.conf /etc/supervisor/conf.d/all-services.conf
