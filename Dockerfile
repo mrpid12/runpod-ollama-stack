@@ -17,10 +17,7 @@ FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-# --- NEW FIX ---
-# Point Ollama to a dedicated, unambiguous path inside the container.
-# This avoids potential issues where Ollama tries to guess subdirectories.
-ENV OLLAMA_MODELS=/ollama_home
+# OLLAMA_MODELS is now removed to allow the runtime environment to set it.
 ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install all system dependencies, including the generic python3-venv package,
@@ -56,7 +53,9 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
     python3 -m venv searx-pyenv && \
-    ./searx-pyenv/bin/pip install -r requirements.txt && \
+    # --- THIS IS THE FIX ---
+    # Install gunicorn along with the other requirements.
+    ./searx-pyenv/bin/pip install -r requirements.txt gunicorn && \
     sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml && \
     rm -rf /root/.cache/pip
@@ -64,13 +63,7 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxn
 # Create necessary directories for logs and data.
 RUN mkdir -p /workspace/logs /app/backend/data
 
-# --- NEW FIX ---
-# Create the dedicated home for Ollama and create symbolic links
-# from it to your actual model data on the network volume (/workspace).
-# This ensures Ollama finds the manifests and models directories exactly where it expects them.
-RUN mkdir -p /ollama_home && \
-    ln -s /workspace/manifests /ollama_home/manifests && \
-    ln -s /workspace/models /ollama_home/models
+# The symbolic link creation is now removed as it's not needed.
 
 # Copy your custom scripts and supervisor config.
 COPY supervisord.conf /etc/supervisor/conf.d/all-services.conf
