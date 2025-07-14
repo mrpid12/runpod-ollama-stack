@@ -1,27 +1,20 @@
 # --- STAGE 1: Build Open WebUI Frontend ---
-# Use an official Node.js image as a temporary builder stage.
 FROM node:20 as webui-builder
 WORKDIR /app
-# Clone the repository and install dependencies
 RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
-# Increase the memory available to the Node.js build process.
 RUN NODE_OPTIONS="--max-old-space-size=6144" npm run build
 
-
 # --- STAGE 2: Final Production Image ---
-# Start from the official NVIDIA CUDA base image for GPU support.
 FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 
-# Set environment variables to avoid interactive prompts and configure applications.
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-# OLLAMA_MODELS is now removed to allow the runtime environment to set it.
+ENV OLLAMA_MODELS=/workspace/models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# Install all system dependencies, including the generic python3-venv package,
-# and then explicitly set python3.11 as the default.
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
@@ -34,45 +27,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Ollama using the official installation script for reliability.
+# Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Copy the pre-built Open WebUI backend and frontend from the builder stage.
+# Copy Open WebUI
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
-# Copy the CHANGELOG.md file required by the backend to start.
 COPY --from=webui-builder /app/CHANGELOG.md /app/CHANGELOG.md
 
-# Ensure pip is available and then install Open WebUI's Python dependencies.
+# Install Open WebUI Python dependencies
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# Clone and set up SearXNG.
+# Install and set up SearXNG with gunicorn
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
     python3 -m venv searx-pyenv && \
-    # --- THIS IS THE FIX ---
-    # Install gunicorn along with the other requirements.
     ./searx-pyenv/bin/pip install -r requirements.txt gunicorn && \
     sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml && \
+    # --- THIS IS THE FIX ---
+    # Tell SearXNG to trust requests coming from a proxy (like Open WebUI)
+    sed -i "/port: 8888/a \ \ use_proxy: true" searx/settings.yml && \
     rm -rf /root/.cache/pip
 
-# Create necessary directories for logs and data.
-RUN mkdir -p /workspace/logs /app/backend/data
-
-# The symbolic link creation is now removed as it's not needed.
-
-# Copy your custom scripts and supervisor config.
+# Copy custom scripts and supervisord config
 COPY supervisord.conf /etc/supervisor/conf.d/all-services.conf
 COPY entrypoint.sh /entrypoint.sh
 COPY pull_model.sh /pull_model.sh
 RUN chmod +x /entrypoint.sh /pull_model.sh
 
-# Expose all necessary ports for the services.
-EXPOSE 8080 8888 11434
-
-# Set the entrypoint to start all services.
+# Set the entrypoint to start all services
 ENTRYPOINT ["/entrypoint.sh"]
