@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# --- FINAL FIX ---
+# When a fresh workspace is mounted, it hides the /workspace/logs directory
+# that was created during the image build. This command ensures the log
+# directory exists on the volume before supervisord starts.
+mkdir -p /workspace/logs
+
+# --- Original Content ---
 # Define the path to the supervisor configuration file
 SUPERVISOR_CONF="/etc/supervisor/conf.d/all-services.conf"
 
