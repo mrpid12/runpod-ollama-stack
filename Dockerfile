@@ -8,6 +8,7 @@ RUN NODE_OPTIONS="--max-old-space-size=6144" npm run build
 # --- STAGE 2: Final Production Image ---
 FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -48,8 +49,6 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxn
     ./searx-pyenv/bin/pip install -r requirements.txt gunicorn && \
     sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml && \
-    # --- THIS IS THE FIX ---
-    # Tell SearXNG to trust requests coming from a proxy (like Open WebUI)
     sed -i "/port: 8888/a \ \ use_proxy: true" searx/settings.yml && \
     rm -rf /root/.cache/pip
 
