@@ -17,8 +17,9 @@ FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-ENV OLLAMA_HOST=0.0.0.0
-ENV OLLAMA_MODELS=/workspace/ollama-models
+# --- THIS IS A FIX ---
+# Point Ollama to the root of the workspace to match your existing model structure.
+ENV OLLAMA_MODELS=/workspace
 ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install all system dependencies, including the generic python3-venv package,
@@ -41,7 +42,6 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 # Copy the pre-built Open WebUI backend and frontend from the builder stage.
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
-# --- THIS IS THE FIX ---
 # Copy the CHANGELOG.md file required by the backend to start.
 COPY --from=webui-builder /app/CHANGELOG.md /app/CHANGELOG.md
 
