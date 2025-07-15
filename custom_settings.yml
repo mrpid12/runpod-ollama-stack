@@ -1,0 +1,36 @@
+# Definitive settings.yml file for SearXNG in Docker.
+
+server:
+  bind_address: "0.0.0.0"
+  port: 8888
+  base_url: "http://127.0.0.1:8888"
+  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"
+
+general:
+  instance_name: "My SearXNG"
+  default_doi_resolver: "doi.org"
+
+ui:
+  static_path: "static"
+  default_theme: "simple"
+  default_infobox: "en"
+  default_lang: "en"
+
+# Use a minimal, reliable set of search engines.
+engines:
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    disabled: false
+
+# Explicitly disable bot detection and trust the internal Host header.
+security:
+  trusted_hosts:
+    - "127.0.0.1:8888"
+  bot_detection:
+    method: none
+  ip_limiter:
+    behind_proxy: false
+    rules: []
