@@ -15,7 +15,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV OLLAMA_MODELS=/workspace/models
 ENV PIP_ROOT_USER_ACTION=ignore
 
-# --- FIX: Add build-essential and python3.11-dev for compiling uwsgi ---
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -52,7 +51,6 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxn
     ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
     sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml && \
-    sed -i "/port: 8888/a \ \ use_proxy: true" searx/settings.yml && \
     mkdir -p /etc/searxng && \
     rm -rf /root/.cache/pip
 
