@@ -1,17 +1,24 @@
-# This is a minimal, known-good settings file for SearXNG in Docker.
+# This is a minimal but complete settings.yml file for SearXNG in Docker.
 
 server:
-  # These are the three critical settings for a containerized environment.
   bind_address: "0.0.0.0"
   port: 8888
   base_url: "http://127.0.0.1:8888"
+  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b" # Replace with a new key
 
-  # Replace this key with a new one.
-  # You can generate a new key on your own machine by running:
-  # openssl rand -hex 16
-  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"
+general:
+  # This section is required by the application, including the DOI resolver.
+  instance_name: "My SearXNG"
+  default_doi_resolver: "doi.org"
 
-# Minimal set of working engines with the correct object format
+ui:
+  # This section is also required for the UI to load correctly.
+  static_path: "static"
+  default_theme: "simple"
+  default_infobox: "osm"
+  default_lang: "en"
+
+# Use a minimal, reliable set of search engines with the correct format.
 engines:
   - name: google
     disabled: false
@@ -20,7 +27,7 @@ engines:
   - name: duckduckgo
     disabled: false
 
-# Explicitly disable security features that can cause 403 errors in this setup.
+# Explicitly disable security features that can cause issues in this setup.
 security:
   bot_detection:
     method: none
