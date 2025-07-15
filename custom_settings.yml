@@ -6,6 +6,10 @@ server:
   base_url: "http://127.0.0.1:8888"
   secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b" # Replace with a new key
 
+# --- FIX 2: Re-add this top-level key to prevent the KeyError ---
+# This seems to be required by one part of the app's code.
+default_doi_resolver: "doi.org"
+
 general:
   instance_name: "My SearXNG"
   # This list defines the valid choices for the doi_resolver preference.
@@ -17,13 +21,12 @@ ui:
   default_infobox: "osm"
   default_lang: "en"
 
-# --- FIX: Set the value directly within the locked preference ---
 search:
+  # --- FIX 1: Keep this section to prevent the ValidationException ---
+  # This is required by another part of the app's code.
   lock_preferences:
     - name: "doi_resolver"
       lock: "all"
-      # Set the locked value here instead of using the non-standard
-      # 'default_doi_resolver' at the top level.
       value: "doi.org"
 
 # Use a minimal, reliable set of search engines.
