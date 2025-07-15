@@ -6,12 +6,9 @@ server:
   base_url: "http://127.0.0.1:8888"
   secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b" # Replace with a new key
 
-# This key MUST be at the top level, and its value MUST be a simple domain.
-default_doi_resolver: "doi.org"
-
 general:
   instance_name: "My SearXNG"
-  # This list is ALSO required to define the valid choices for the setting above.
+  # This list defines the valid choices for the doi_resolver preference.
   doi_resolvers:
     "doi.org": "doi.org"
 
@@ -20,11 +17,14 @@ ui:
   default_infobox: "osm"
   default_lang: "en"
 
-# --- FIX: Lock the problematic preference to prevent it from being overridden ---
+# --- FIX: Set the value directly within the locked preference ---
 search:
   lock_preferences:
     - name: "doi_resolver"
       lock: "all"
+      # Set the locked value here instead of using the non-standard
+      # 'default_doi_resolver' at the top level.
+      value: "doi.org"
 
 # Use a minimal, reliable set of search engines.
 engines:
