@@ -60,5 +60,8 @@ COPY entrypoint.sh /entrypoint.sh
 COPY pull_model.sh /pull_model.sh
 RUN chmod +x /entrypoint.sh /pull_model.sh
 
+# --- FIX: Expose the ports for clarity ---
+EXPOSE 8888 8080
+
 # Set the entrypoint to start all services
 ENTRYPOINT ["/entrypoint.sh"]
