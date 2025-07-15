@@ -44,16 +44,19 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# --- FIX: Using a completely custom settings file to eliminate variables ---
+# --- FINAL FIX: Modify the default settings.yml with all required changes ---
 # Install and set up SearXNG with uWSGI
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
     python3 -m venv searx-pyenv && \
     ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
+    sed -i "s/ultrasecretkey/$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)/" searx/settings.yml && \
+    sed -i 's/port: 8080/port: 8888/' searx/settings.yml && \
+    sed -i 's/bind_address: "127.0.0.1"/bind_address: "0.0.0.0"/' searx/settings.yml && \
+    sed -i "s#base_url: false#base_url: \"http://127.0.0.1:8888\"#" searx/settings.yml && \
     mkdir -p /etc/searxng
 
 # Copy config files and custom scripts
-COPY custom_settings.yml /usr/local/searxng/searx/settings.yml
 COPY uwsgi.ini /etc/searxng/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/all-services.conf
 COPY entrypoint.sh /entrypoint.sh
