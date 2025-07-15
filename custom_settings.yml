@@ -1,0 +1,26 @@
+# This is a minimal, known-good settings file for SearXNG in Docker.
+
+server:
+  # These are the three critical settings for a containerized environment.
+  bind_address: "0.0.0.0"
+  port: 8888
+  base_url: "http://127.0.0.1:8888"
+
+  # Replace this key with a new one.
+  # You can generate a new key on your own machine by running:
+  # openssl rand -hex 16
+  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"
+
+# Use a minimal, reliable set of search engines for testing.
+engines:
+  - google
+  - bing
+  - duckduckgo
+
+# Explicitly disable security features that can cause 403 errors in this setup.
+security:
+  bot_detection:
+    method: none
+  ip_limiter:
+    behind_proxy: false
+    rules: []
