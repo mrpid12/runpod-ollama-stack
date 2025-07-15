@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-    # This now specifically targets a runner with all three labels
     runs-on: [self-hosted, Linux, X64]
 
     steps:
@@ -30,4 +29,6 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
-          no-cache: true
+          # Caching strategy re-instated to speed up future builds
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:buildcache,mode=max
