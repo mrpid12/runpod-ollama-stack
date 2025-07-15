@@ -42,18 +42,20 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# --- FIX: Install gevent for the async-compatible WSGI worker ---
-# Install and set up SearXNG with gunicorn and gevent worker
+# --- FIX: Switch to uWSGI, the officially supported server ---
+# Install and set up SearXNG with uWSGI
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
     python3 -m venv searx-pyenv && \
-    ./searx-pyenv/bin/pip install -r requirements.txt gunicorn gevent && \
+    ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
     sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml && \
     sed -i "/port: 8888/a \ \ use_proxy: true" searx/settings.yml && \
+    mkdir -p /etc/searxng && \
     rm -rf /root/.cache/pip
 
-# Copy custom scripts and supervisord config
+# Copy config files and custom scripts
+COPY uwsgi.ini /etc/searxng/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/all-services.conf
 COPY entrypoint.sh /entrypoint.sh
 COPY pull_model.sh /pull_model.sh
