@@ -4,22 +4,29 @@ server:
   bind_address: "0.0.0.0"
   port: 8888
   base_url: "http://127.0.0.1:8888"
-  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"  # Replace this with a secure random value in production
+  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b" # Replace with a new key
 
-# Must match one of the keys in the doi_resolvers dictionary below
-default_doi_resolver: "https://doi.org"
+# This key MUST be at the top level, and its value MUST be a simple domain.
+default_doi_resolver: "doi.org"
 
 general:
   instance_name: "My SearXNG"
-  # List of allowed DOI resolvers; keys are the URLs to match, values are human-readable names
+  # This list is ALSO required to define the valid choices for the setting above.
   doi_resolvers:
-    "https://doi.org": "doi.org"
+    "doi.org": "doi.org"
 
 ui:
   default_theme: "simple"
   default_infobox: "osm"
   default_lang: "en"
 
+# --- FIX: Lock the problematic preference to prevent it from being overridden ---
+search:
+  lock_preferences:
+    - name: "doi_resolver"
+      lock: "all"
+
+# Use a minimal, reliable set of search engines.
 engines:
   - name: google
     disabled: false
@@ -28,7 +35,7 @@ engines:
   - name: duckduckgo
     disabled: false
 
-# Disable all protection mechanisms for simplicity in internal container use
+# Explicitly disable security features and trust the internal Host header.
 security:
   trusted_hosts:
     - "127.0.0.1:8888"
