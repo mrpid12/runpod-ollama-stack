@@ -15,6 +15,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV OLLAMA_MODELS=/workspace/models
 ENV PIP_ROOT_USER_ACTION=ignore
 
+# --- FIX: Add build-essential and python3.11-dev for compiling uwsgi ---
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -24,6 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11-venv \
     python3-venv \
     libgomp1 \
+    build-essential \
+    python3.11-dev \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -42,7 +45,6 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# --- FIX: Switch to uWSGI, the officially supported server ---
 # Install and set up SearXNG with uWSGI
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
