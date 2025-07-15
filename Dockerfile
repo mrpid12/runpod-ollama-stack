@@ -44,6 +44,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
+# --- FIX: Set the base_url in SearXNG to prevent 403 errors ---
 # Install and set up SearXNG with uWSGI
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
@@ -51,6 +52,7 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxn
     ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
     sed -i "s#ultrasecretkey#$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)#g" searx/settings.yml && \
     sed -i 's/port: 8080/port: 8888/g' searx/settings.yml && \
+    sed -i "/^server:/a \ \ base_url: http:\/\/127.0.0.1:8888" searx/settings.yml && \
     mkdir -p /etc/searxng && \
     rm -rf /root/.cache/pip
 
