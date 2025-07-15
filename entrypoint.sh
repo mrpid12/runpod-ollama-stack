@@ -1,33 +1,36 @@
 #!/bin/bash
 
-# Ensure the log directory exists on the volume before supervisord starts.
+# Ensure the log directory exists before supervisord starts.
 mkdir -p /workspace/logs
 
+# --- Print and validate searxng settings ---
+echo "--- Checking searx settings.yml contents ---"
+if [ -f /usr/local/searxng/searx/settings.yml ]; then
+  grep doi /usr/local/searxng/searx/settings.yml || echo "WARNING: No 'doi' config found!"
+else
+  echo "ERROR: /usr/local/searxng/searx/settings.yml not found!"
+fi
+echo "--- End of settings check ---"
 
-# --- NEW FIX: Make Open WebUI settings persistent ---
+# --- WebUI persistent data fix ---
 WEBUI_DATA_DIR="/app/backend/data"
 PERSISTENT_DATA_DIR="/workspace/webui-data"
 
-echo "--- Ensuring Open WebUI data is persistent..."
-# Create the persistent data directory on the volume if it doesn't exist
+echo "--- Ensuring Open WebUI data is persistent... ---"
+
 mkdir -p "$PERSISTENT_DATA_DIR"
 
-# If the data directory in the app exists and is not a symlink,
-# move its contents to the persistent volume and create the link.
 if [ -d "$WEBUI_DATA_DIR" ] && [ ! -L "$WEBUI_DATA_DIR" ]; then
-  # Move any initial data from the image to the persistent volume, ignore errors if empty
   mv "$WEBUI_DATA_DIR"/* "$PERSISTENT_DATA_DIR/" 2>/dev/null || true
   rm -rf "$WEBUI_DATA_DIR"
 fi
 
-# Create the symlink if it doesn't already exist
 if [ ! -L "$WEBUI_DATA_DIR" ]; then
   echo "Linking $PERSISTENT_DATA_DIR to $WEBUI_DATA_DIR..."
   ln -s "$PERSISTENT_DATA_DIR" "$WEBUI_DATA_DIR"
 fi
-echo "--- WebUI data persistence configured."
-# --- END OF FIX ---
 
+echo "--- WebUI data persistence configured. ---"
 
 # Define the path to the supervisor configuration file
 SUPERVISOR_CONF="/etc/supervisor/conf.d/all-services.conf"
