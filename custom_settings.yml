@@ -11,11 +11,14 @@ server:
   # openssl rand -hex 16
   secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"
 
-# Use a minimal, reliable set of search engines for testing.
+# Minimal set of working engines with the correct object format
 engines:
-  - google
-  - bing
-  - duckduckgo
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    disabled: false
 
 # Explicitly disable security features that can cause 403 errors in this setup.
 security:
