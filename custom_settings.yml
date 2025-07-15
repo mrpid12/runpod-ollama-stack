@@ -4,16 +4,16 @@ server:
   bind_address: "0.0.0.0"
   port: 8888
   base_url: "http://127.0.0.1:8888"
-  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"
+  secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b" # Replace with a new key
 
 general:
   instance_name: "My SearXNG"
   default_doi_resolver: "doi.org"
 
 ui:
-  static_path: "static"
+  # The static_path is removed to allow SearXNG to use its correct default.
   default_theme: "simple"
-  default_infobox: "en"
+  default_infobox: "osm"
   default_lang: "en"
 
 # Use a minimal, reliable set of search engines.
@@ -25,7 +25,7 @@ engines:
   - name: duckduckgo
     disabled: false
 
-# Explicitly disable bot detection and trust the internal Host header.
+# Explicitly disable security features and trust the internal Host header.
 security:
   trusted_hosts:
     - "127.0.0.1:8888"
