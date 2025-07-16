@@ -1,7 +1,8 @@
 # --- STAGE 1: Build Open WebUI Frontend ---
+# Pin Open WebUI to a stable release tag
 FROM node:20 as webui-builder
 WORKDIR /app
-RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
+RUN git clone --depth 1 --branch v0.2.10 https://github.com/open-webui/open-webui.git .
 RUN npm install && npm cache clean --force
 RUN NODE_OPTIONS="--max-old-space-size=6144" npm run build
 
@@ -32,7 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Copy Open WebUI
+# Copy Open WebUI from the pinned-version build stage
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 COPY --from=webui-builder /app/CHANGELOG.md /app/CHANGELOG.md
@@ -43,8 +44,8 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# --- FIX: Install the latest STABLE version of SearXNG from 2025 ---
-RUN git clone --depth 1 --branch 2025.07.15 https://github.com/searxng/searxng.git /usr/local/searxng && \
+# --- FIX: Use the correct latest stable tag for SearXNG ---
+RUN git clone --depth 1 --branch 2024.12.15 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
     python3 -m venv searx-pyenv && \
     ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
