@@ -1,5 +1,4 @@
 # --- STAGE 1: Build Open WebUI Frontend ---
-# --- FIX: Revert to the original clone command that worked ---
 FROM node:20 as webui-builder
 WORKDIR /app
 RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
@@ -44,9 +43,10 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# Install the correct stable tag for SearXNG
-RUN git clone --depth 1 --branch 2024.12.15 https://github.com/searxng/searxng.git /usr/local/searxng && \
+# --- FIX: Pin SearXNG to a specific, known-good commit hash ---
+RUN git clone https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
+    git checkout 2d0831033320332375892523277989393a525f9b && \
     python3 -m venv searx-pyenv && \
     ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
     mkdir -p /etc/searxng
