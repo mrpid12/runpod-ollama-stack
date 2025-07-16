@@ -26,13 +26,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     build-essential \
     python3.11-dev \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Copy Open WebUI from the build stage
+# Copy Open WebUI
 COPY --from=webui-builder /app/backend /app/backend
 COPY --from=webui-builder /app/build /app/build
 COPY --from=webui-builder /app/CHANGELOG.md /app/CHANGELOG.md
@@ -43,7 +44,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 -m pip install -r /app/backend/requirements.txt -U && \
     rm -rf /root/.cache/pip
 
-# --- FIX: Revert to cloning the latest development branch of SearXNG ---
+# Install and set up SearXNG with uWSGI
 RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxng && \
     cd /usr/local/searxng && \
     python3 -m venv searx-pyenv && \
@@ -58,7 +59,7 @@ COPY entrypoint.sh /entrypoint.sh
 COPY pull_model.sh /pull_model.sh
 RUN chmod +x /entrypoint.sh /pull_model.sh
 
-# Expose the ports for clarity
+# Expose ports for clarity
 EXPOSE 8888 8080
 
 # Set the entrypoint to start all services
