@@ -6,7 +6,7 @@ server:
   base_url: "http://127.0.0.1:8888"
   secret_key: "1a8afd7c3b9a3e3b9e4b7b1b3a5a7b1b"
 
-# This key IS REQUIRED by the application code.
+# This key IS REQUIRED by the latest application code.
 default_doi_resolver: "doi.org"
 
 general:
