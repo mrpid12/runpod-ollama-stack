@@ -2,7 +2,7 @@
 
 # --- Configuration ---
 # Read the timeout from an environment variable, with a default of 1800 seconds (30 minutes).
-IDLE_TIMEOUT=${IDLE_TIMEOUT_SECONDS:-1800}
+IDle_TIMEOUT=${IDLE_TIMEOUT_SECONDS:-1800}
 
 # How often (in seconds) to check for activity.
 CHECK_INTERVAL=60
@@ -10,7 +10,7 @@ CHECK_INTERVAL=60
 # The GPU utilization percentage that is considered "active".
 GPU_UTILIZATION_THRESHOLD=10
 
-echo "--- GPU Idle Shutdown Script Started (v4 - runpodctl) ---"
+echo "--- GPU Idle Shutdown Script Started (v5 - Final) ---"
 echo "Timeout is set to ${IDLE_TIMEOUT} seconds."
 echo "Monitoring GPU utilization. Threshold for activity: ${GPU_UTILIZATION_THRESHOLD}%"
 
