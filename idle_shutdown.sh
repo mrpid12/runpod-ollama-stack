@@ -1,20 +1,20 @@
 #!/bin/bash
 
 # --- Configuration ---
-# The number of seconds of inactivity before shutdown. (30 minutes = 1800 seconds)
-IDLE_TIMEOUT=1800
+# Read the timeout from an environment variable, with a default of 1800 seconds (30 minutes).
+# You can set IDLE_TIMEOUT_SECONDS in your RunPod template to override this.
+IDLE_TIMEOUT=${IDLE_TIMEOUT_SECONDS:-1800}
 
 # How often (in seconds) to check for activity.
 CHECK_INTERVAL=60
 
 # The GPU utilization percentage that is considered "active".
 # If usage is above this, the idle timer resets.
-# Inferences will cause a large spike, so 10% is a safe threshold.
 GPU_UTILIZATION_THRESHOLD=10
 
 echo "--- GPU Idle Shutdown Script Started ---"
+echo "Timeout is set to ${IDLE_TIMEOUT} seconds."
 echo "Monitoring GPU utilization. Threshold for activity: ${GPU_UTILIZATION_THRESHOLD}%"
-echo "Pod will terminate after ${IDLE_TIMEOUT} seconds of low GPU activity."
 
 # --- Sanity Checks ---
 if [ -z "$RUNPOD_API_KEY" ]; then
@@ -36,8 +36,6 @@ LAST_ACTIVE=$(date +%s)
 
 while true; do
   # Get the maximum GPU utilization across all GPUs.
-  # This handles both single and multi-GPU pods correctly.
-  # The output is a simple integer (e.g., 5 or 95).
   CURRENT_UTILIZATION=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | sort -nr | head -n1)
 
   # Check if the GPU is currently active
