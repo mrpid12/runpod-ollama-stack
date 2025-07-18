@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     supervisor \
+    iproute2 \
     python3.11 \
     python3.11-venv \
     python3-venv \
