@@ -1,8 +1,8 @@
-# [cite_start]--- STAGE 1: Build Open WebUI Frontend --- [cite: 1]
+# --- STAGE 1: Build Open WebUI Frontend ---
 FROM node:20 as webui-builder
 WORKDIR /app
 RUN git clone --depth 1 https://github.com/open-webui/open-webui.git .
-[cite_start]RUN npm install && npm cache clean --force [cite: 2]
+RUN npm install && npm cache clean --force
 RUN NODE_OPTIONS="--max-old-space-size=6144" npm run build
 
 # --- STAGE 2: Final Production Image ---
@@ -28,10 +28,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11-dev \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
     && apt-get clean \
-    [cite_start]&& rm -rf /var/lib/apt/lists/* [cite: 3]
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
-[cite_start]RUN curl -fsSL https://ollama.com/install.sh | sh [cite: 4]
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Copy Open WebUI
 COPY --from=webui-builder /app/backend /app/backend
@@ -51,7 +51,7 @@ RUN git clone --depth 1 https://github.com/searxng/searxng.git /usr/local/searxn
     ./searx-pyenv/bin/pip install -r requirements.txt uwsgi && \
     mkdir -p /etc/searxng
 
-# [cite_start]Copy config files and custom scripts [cite: 5]
+# Copy config files and custom scripts
 COPY custom_settings.yml /usr/local/searxng/searx/settings.yml
 COPY uwsgi.ini /etc/searxng/uwsgi.ini
 COPY supervisord.conf /etc/supervisor/conf.d/all-services.conf
